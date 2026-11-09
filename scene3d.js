@@ -1,5 +1,5 @@
 /**
- * 投開票所 3D 互動導覽場景引擎 (Three.js + GSAP)
+ * 投開票所選務實境教學系統 - 3D 互動導覽場景引擎 (Three.js + GSAP)
  * 負責建構投票所模式、開票所模式、3D 人物與設施模型、動態模擬動畫與相機導覽控制
  */
 
@@ -14,6 +14,8 @@ class PollingStation3D {
         this.showFlowHelpers = true;
         this.emergencyLightMode = false;
         this.simulatingFlow = false;
+        this.curtainsOpen = false;
+        this.boothCurtains = [];
 
         this.interactables = [];
         this.stationGroups = new Map();
@@ -224,7 +226,7 @@ class PollingStation3D {
         this.buildDoorwayArch(-6.6, 7.0, "入 口 處", "#0284c7", "ENTRANCE");
         this.buildDoorwayArch(6.6, 7.0, "出 口 處", "#059669", "EXIT");
 
-        // 後牆上方緊急輔助照明燈具模型 (對應手冊：電燈失明開啟輔助照明設備)
+        // 後牆上方緊急輔助照明燈具模型 (停電時開啟輔助照明設備)
         this.emergencyLampMeshes = [];
         [-6, 6].forEach(xPos => {
             const lampBox = new THREE.Mesh(
@@ -484,7 +486,7 @@ class PollingStation3D {
             group.add(leg);
         });
 
-        // 遮屏三面擋板 (缺口朝向 Z+ 出入口工作人員方向，符合手冊第04頁規定)
+        // 遮屏三面擋板 (缺口朝向 Z+ 出入口工作人員方向)
         const backPanel = new THREE.Mesh(new THREE.BoxGeometry(boothW, screenH, 0.05), frameMat);
         backPanel.position.set(0, tableH + screenH / 2, -boothD / 2 + 0.025);
         backPanel.castShadow = true;
@@ -500,26 +502,31 @@ class PollingStation3D {
         rightPanel.castShadow = true;
         group.add(rightPanel);
 
-        // 圈選工具與紅色印台
+        // 圈選工具與紅色印台 (放大細節方便掀開遮簾時展示)
         const inkPad = new THREE.Mesh(
-            new THREE.BoxGeometry(0.18, 0.04, 0.14),
-            new THREE.MeshStandardMaterial({ color: 0xdc2626 })
+            new THREE.BoxGeometry(0.22, 0.05, 0.16),
+            new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 })
         );
-        inkPad.position.set(0.22, tableH + 0.04, -0.12);
+        inkPad.position.set(0.24, tableH + 0.045, -0.08);
         const stampTool = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.025, 0.025, 0.14, 12),
-            new THREE.MeshStandardMaterial({ color: 0xfef08a })
+            new THREE.CylinderGeometry(0.032, 0.032, 0.18, 14),
+            new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.3 })
         );
-        stampTool.position.set(-0.15, tableH + 0.08, -0.12);
-        group.add(inkPad, stampTool);
+        stampTool.position.set(-0.18, tableH + 0.1, -0.08);
+        const ballotSample = new THREE.Mesh(
+            new THREE.BoxGeometry(0.26, 0.01, 0.34),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        ballotSample.position.set(0.02, tableH + 0.035, 0.05);
+        group.add(inkPad, stampTool, ballotSample);
 
         // 視障投票輔助器 (無障礙遮屏配備)
         if (isWheelchair) {
             const brailleAid = new THREE.Mesh(
-                new THREE.BoxGeometry(0.32, 0.02, 0.24),
-                new THREE.MeshStandardMaterial({ color: 0xfde047 })
+                new THREE.BoxGeometry(0.34, 0.025, 0.26),
+                new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.4 })
             );
-            brailleAid.position.set(-0.28, tableH + 0.04, 0.1);
+            brailleAid.position.set(-0.34, tableH + 0.045, 0.12);
             group.add(brailleAid);
 
             // 無障礙輪椅標誌貼圖 (使用 Font Awesome \uf193 圖示與文字)
@@ -538,7 +545,7 @@ class PollingStation3D {
             });
             const wcSign = new THREE.Mesh(
                 new THREE.PlaneGeometry(0.75, 0.75),
-                new THREE.MeshBasicMaterial({ map: wcTex })
+                new THREE.MeshBasicMaterial({ map: wcTex, side: THREE.DoubleSide })
             );
             wcSign.position.set(0, tableH + screenH / 2, -boothD / 2 + 0.06);
             group.add(wcSign);
@@ -563,11 +570,84 @@ class PollingStation3D {
             });
             const ruleSign = new THREE.Mesh(
                 new THREE.PlaneGeometry(0.72, 0.72),
-                new THREE.MeshBasicMaterial({ map: ruleTex })
+                new THREE.MeshBasicMaterial({ map: ruleTex, side: THREE.DoubleSide })
             );
             ruleSign.position.set(0, tableH + screenH / 2, -boothD / 2 + 0.06);
             group.add(ruleSign);
         }
+
+        // =====================================================================
+        // 圈票處隱私遮簾 (可掀開 / 放下展示內部圈選工具與規定標示)
+        // =====================================================================
+        const rodY = tableH + screenH - 0.02;
+        const rodZ = boothD / 2 - 0.02;
+
+        // 金屬窗簾橫桿
+        const curtainRod = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.022, 0.022, boothW + 0.06, 12),
+            new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7, roughness: 0.25 })
+        );
+        curtainRod.rotation.z = Math.PI / 2;
+        curtainRod.position.set(0, rodY, rodZ);
+        group.add(curtainRod);
+
+        // 遮簾布料皺褶貼圖
+        const curtainTex = this.createSignTexture(256, 384, (ctx, w, h) => {
+            const grad = ctx.createLinearGradient(0, 0, w, 0);
+            for (let i = 0; i <= 8; i++) {
+                grad.addColorStop(i / 8, i % 2 === 0 ? "#1e3a8a" : "#2563eb");
+            }
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 底部金色滾邊與秘密投票字樣
+            ctx.fillStyle = "#facc15";
+            ctx.fillRect(0, h - 38, w, 14);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.font = "bold 26px 'Microsoft JhengHei', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("秘密圈票遮簾", w / 2, h / 2);
+        });
+
+        const curtainMat = new THREE.MeshStandardMaterial({
+            map: curtainTex,
+            roughness: 0.65,
+            side: THREE.DoubleSide
+        });
+
+        const curtainH = screenH - 0.06;
+        const halfW = (boothW - 0.08) / 2;
+
+        // 左半片遮簾 (以頂部橫桿為旋轉軸心，方便向上掀開與向側邊拉開)
+        const leftPivot = new THREE.Group();
+        leftPivot.position.set(-halfW / 2, rodY, rodZ);
+        const leftCloth = new THREE.Mesh(
+            new THREE.BoxGeometry(halfW - 0.01, curtainH, 0.025),
+            curtainMat
+        );
+        leftCloth.position.set(0, -curtainH / 2, 0);
+        leftCloth.castShadow = true;
+        leftPivot.add(leftCloth);
+        group.add(leftPivot);
+
+        // 右半片遮簾 (以頂部橫桿為旋轉軸心)
+        const rightPivot = new THREE.Group();
+        rightPivot.position.set(halfW / 2, rodY, rodZ);
+        const rightCloth = new THREE.Mesh(
+            new THREE.BoxGeometry(halfW - 0.01, curtainH, 0.025),
+            curtainMat
+        );
+        rightCloth.position.set(0, -curtainH / 2, 0);
+        rightCloth.castShadow = true;
+        rightPivot.add(rightCloth);
+        group.add(rightPivot);
+
+        this.boothCurtains.push({
+            leftPivot,
+            rightPivot,
+            baseHalfW: halfW / 2,
+            boothEdgeX: (boothW / 2) - 0.1
+        });
 
         return group;
     }
@@ -672,7 +752,7 @@ class PollingStation3D {
         });
     }
 
-    // 建構【模式一：投票所之佈置】3D 物件 (對應手冊第 04-05 頁)
+    // 建構【模式一：投票所之佈置】3D 物件
     buildPollingScene() {
         this.pollingGroup = new THREE.Group();
         this.scene.add(this.pollingGroup);
@@ -701,7 +781,7 @@ class PollingStation3D {
         titleBoard.position.set(-8.6, 1.2, 7.35);
         entranceGroup.add(titleBoard);
 
-        // 禁止攜帶手機標語牌 & 手機放置籃桌
+        // 禁止攜帶未關機手機標語牌 & 手機放置籃桌
         const phoneSignTex = this.createSignTexture(512, 384, (ctx, w, h) => {
             ctx.fillStyle = "#fef2f2";
             ctx.fillRect(0, 0, w, h);
@@ -709,15 +789,15 @@ class PollingStation3D {
             ctx.lineWidth = 16;
             ctx.strokeRect(12, 12, w - 24, h - 24);
             ctx.fillStyle = "#dc2626";
-            ctx.font = "bold 46px 'Microsoft JhengHei', sans-serif";
+            ctx.font = "bold 42px 'Microsoft JhengHei', sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("禁止攜帶手機入場", w / 2, 85);
+            ctx.fillText("禁帶未關機手機入場", w / 2, 82);
             ctx.fillStyle = "#1e293b";
-            ctx.font = "bold 30px 'Microsoft JhengHei', sans-serif";
-            ctx.fillText("請關機並放入手機放置籃", w / 2, 165);
-            ctx.fillText("違者依選罷法處罰", w / 2, 225);
+            ctx.font = "bold 28px 'Microsoft JhengHei', sans-serif";
+            ctx.fillText("請先關機或放入手機放置籃", w / 2, 155);
+            ctx.fillText("禁穿戴競選服飾 · 6歲以下可隨同", w / 2, 215);
             ctx.fillStyle = "#2563eb";
-            ctx.fillText("【 手機放置籃代管處 】", w / 2, 310);
+            ctx.fillText("【 手機放置籃代管處 】", w / 2, 305);
         });
         const phoneSign = new THREE.Mesh(
             new THREE.BoxGeometry(1.25, 0.95, 0.1),
@@ -929,7 +1009,7 @@ class PollingStation3D {
             ctx.textAlign = "center";
             ctx.fillText("投票出口", w / 2, 95);
             ctx.font = "900 68px 'Font Awesome 6 Free'";
-            ctx.fillText("\uf061", w / 2, 190);
+            ctx.fillText("\uf063", w / 2, 190);
         });
         const exitBoard = new THREE.Mesh(
             new THREE.BoxGeometry(0.85, 1.1, 0.1),
@@ -941,24 +1021,24 @@ class PollingStation3D {
 
         this.registerInteractiveStation(stations[7], this.pollingGroup, exitGroup);
 
-        // 投票動線地面箭頭與動態模擬選舉人
+        // 投票動線地面箭頭與動態模擬選舉人 (依起點與目標座標精確計算方向角，確保全數順向指引入口➔領票➔等候線➔圈票➔投票匭➔出口)
         this.pollingFlowGroup = new THREE.Group();
         this.pollingGroup.add(this.pollingFlowGroup);
 
-        const arrowPoints = [
-            { x: -6.4, z: 7.4, rot: Math.PI },
-            { x: -4.6, z: 4.2, rot: Math.PI * 0.85 },
-            { x: -4.2, z: 1.2, rot: Math.PI * 0.65 },
-            { x: -2.2, z: -1.2, rot: Math.PI * 0.75 },
-            { x: 0.0, z: -3.2, rot: Math.PI },
-            { x: 3.2, z: -2.2, rot: -Math.PI * 0.6 },
-            { x: 5.5, z: 2.2, rot: 0 },
-            { x: 6.5, z: 5.8, rot: 0 }
+        const arrowSegments = [
+            { x: -6.5, z: 7.4, tx: -5.4, tz: 5.2 },  // 1. 入口處進入 ➔ 查驗身分證
+            { x: -4.6, z: 4.3, tx: -4.4, tz: 1.8 },  // 2. 查驗身分證 ➔ 領票處
+            { x: -4.2, z: 1.2, tx: -2.4, tz: -1.0 }, // 3. 領票處 ➔ 往等候線移動
+            { x: -2.2, z: -1.2, tx: -0.2, tz: -2.2 },// 4. 進入 2m~2.5m 等候線
+            { x: 0.0, z: -3.2, tx: 0.0, tz: -5.2 },  // 5. 等候線 ➔ 進入圈票處遮屏
+            { x: 3.0, z: -2.6, tx: 5.6, tz: -0.8 },  // 6. 圈票完成 ➔ 前往投票匭
+            { x: 5.5, z: 2.2, tx: 6.4, tz: 5.4 },    // 7. 投票匭投完票 ➔ 前往出口處
+            { x: 6.5, z: 5.9, tx: 6.5, tz: 8.5 }     // 8. 由出口處單向離場
         ];
 
         const arrowTex = this.createSignTexture(128, 128, (ctx, w, h) => {
             ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = "rgba(56, 189, 248, 0.85)";
+            ctx.fillStyle = "rgba(56, 189, 248, 0.9)";
             ctx.beginPath();
             ctx.moveTo(w / 2, 12);
             ctx.lineTo(w - 18, h / 2 + 10);
@@ -971,14 +1051,17 @@ class PollingStation3D {
             ctx.fill();
         });
 
-        arrowPoints.forEach(pt => {
+        arrowSegments.forEach(seg => {
             const arrowMesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(0.95, 0.95),
                 new THREE.MeshBasicMaterial({ map: arrowTex, transparent: true })
             );
+            const dx = seg.tx - seg.x;
+            const dz = seg.tz - seg.z;
+            // 當 PlaneGeometry 先繞 X 軸旋轉 -PI/2 後，貼圖上方 (+Y) 指向世界座標 (-sin(rotZ), 0, -cos(rotZ))
             arrowMesh.rotation.x = -Math.PI / 2;
-            arrowMesh.rotation.z = pt.rot;
-            arrowMesh.position.set(pt.x, 0.025, pt.z);
+            arrowMesh.rotation.z = Math.atan2(-dx, -dz);
+            arrowMesh.position.set(seg.x, 0.025, seg.z);
             this.pollingFlowGroup.add(arrowMesh);
         });
 
@@ -989,7 +1072,7 @@ class PollingStation3D {
         this.pollingGroup.add(this.simVoter);
     }
 
-    // 建構【模式二：開票所之佈置】3D 物件 (對應手冊第 12-13 頁)
+    // 建構【模式二：開票所之佈置】3D 物件
     buildCountingScene() {
         this.countingGroup = new THREE.Group();
         this.scene.add(this.countingGroup);
@@ -1086,7 +1169,7 @@ class PollingStation3D {
         countingChiefsGroup.add(cAdmin, cSup);
         this.registerInteractiveStation(stations[4], this.countingGroup, countingChiefsGroup);
 
-        // 6. 參觀席與紅絨繩欄杆 & 警衛人員 (對應手冊第 12-13 頁)
+        // 6. 參觀席與紅絨繩欄杆 & 警衛人員
         const audienceGroup = new THREE.Group();
         const poleMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7, roughness: 0.2 });
         const ropeMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 });
@@ -1127,7 +1210,7 @@ class PollingStation3D {
         this.registerInteractiveStation(stations[5], this.countingGroup, audienceGroup);
     }
 
-    // 繪製「正」字選舉記票紙 Canvas (對應手冊第 13、17 頁)
+    // 繪製「正」字選舉記票紙 Canvas
     updateTallyBoardCanvas(highlightCandidate = -1) {
         if (!this.tallyCanvas) return;
         const ctx = this.tallyCanvas.getContext("2d");
@@ -1192,7 +1275,7 @@ class PollingStation3D {
                 ctx.fillText(remChars[rem], x + colW / 2, rowY);
             }
 
-            // 底部總票數記載 (符合手冊第17頁規定)
+            // 底部總票數記載
             ctx.fillStyle = "#1e293b";
             ctx.font = "bold 26px 'Microsoft JhengHei', sans-serif";
             ctx.fillText(`計 ${cand.count} 票`, x + colW / 2, h - 38);
@@ -1316,7 +1399,37 @@ class PollingStation3D {
         return this.showFlowHelpers;
     }
 
-    // 切換停電緊急輔助照明模擬 (手冊第 14 頁：電燈失明開啟輔助照明設備)
+    // 掀開 / 放下圈票處遮簾展示內部圈選設備 (支援指定狀態或自動切換)
+    toggleBoothCurtains(forceState = null) {
+        this.curtainsOpen = forceState !== null ? forceState : !this.curtainsOpen;
+        this.boothCurtains.forEach(item => {
+            if (window.gsap) {
+                if (this.curtainsOpen) {
+                    // 向上掀開並往兩側拉開展示遮屏內部
+                    gsap.to(item.leftPivot.rotation, { x: -Math.PI * 0.45, duration: 0.65, ease: "power2.out" });
+                    gsap.to(item.rightPivot.rotation, { x: -Math.PI * 0.45, duration: 0.65, ease: "power2.out" });
+                    gsap.to(item.leftPivot.scale, { x: 0.35, duration: 0.65, ease: "power2.out" });
+                    gsap.to(item.rightPivot.scale, { x: 0.35, duration: 0.65, ease: "power2.out" });
+                    gsap.to(item.leftPivot.position, { x: -item.boothEdgeX, duration: 0.65, ease: "power2.out" });
+                    gsap.to(item.rightPivot.position, { x: item.boothEdgeX, duration: 0.65, ease: "power2.out" });
+                } else {
+                    // 放下遮簾維持秘密圈票狀態
+                    gsap.to(item.leftPivot.rotation, { x: 0, duration: 0.6, ease: "power2.inOut" });
+                    gsap.to(item.rightPivot.rotation, { x: 0, duration: 0.6, ease: "power2.inOut" });
+                    gsap.to(item.leftPivot.scale, { x: 1.0, duration: 0.6, ease: "power2.inOut" });
+                    gsap.to(item.rightPivot.scale, { x: 1.0, duration: 0.6, ease: "power2.inOut" });
+                    gsap.to(item.leftPivot.position, { x: -item.baseHalfW, duration: 0.6, ease: "power2.inOut" });
+                    gsap.to(item.rightPivot.position, { x: item.baseHalfW, duration: 0.6, ease: "power2.inOut" });
+                }
+            }
+        });
+        if (window.onCurtainStateChange) {
+            window.onCurtainStateChange(this.curtainsOpen);
+        }
+        return this.curtainsOpen;
+    }
+
+    // 切換停電緊急輔助照明模擬 (電燈失明開啟輔助照明設備)
     toggleEmergencyLighting() {
         this.emergencyLightMode = !this.emergencyLightMode;
         if (this.emergencyLightMode) {
@@ -1339,10 +1452,29 @@ class PollingStation3D {
     toggleSimulation() {
         this.simulatingFlow = !this.simulatingFlow;
         this.voterSimProgress = 0;
+        this.callingTimer = 3.9; // 啟動開票模擬時立即進行第一次唱票與語音播報
         if (this.mode === "polling" && this.simVoter) {
             this.simVoter.visible = this.simulatingFlow;
         }
         return this.simulatingFlow;
+    }
+
+    // 執行單次開票唱票與正字記票更新 (供自動模擬與手動語音示範共用)
+    triggerSingleCountingStep() {
+        const pick = Math.random() < 0.9 ? Math.floor(Math.random() * 3) : 3;
+        this.tallyCounts[pick]++;
+        this.updateTallyBoardCanvas(pick);
+        if (this.heldBallot && window.gsap) {
+            gsap.fromTo(
+                this.heldBallot.position,
+                { y: 1.3 },
+                { y: 1.78, duration: 0.35, yoyo: true, repeat: 1, ease: "power2.out" }
+            );
+        }
+        if (window.onCountingCallTick) {
+            window.onCountingCallTick(pick, this.tallyCounts);
+        }
+        return pick;
     }
 
     bindEvents() {
@@ -1378,7 +1510,11 @@ class PollingStation3D {
             if (intersects.length > 0) {
                 const hitId = intersects[0].object.userData.stationId;
                 if (hitId) {
-                    this.selectStation(hitId, true);
+                    if (hitId === "voting_booths" && this.selectedId === "voting_booths") {
+                        this.toggleBoothCurtains();
+                    } else {
+                        this.selectStation(hitId, true);
+                    }
                 }
             }
         });
@@ -1452,19 +1588,20 @@ class PollingStation3D {
                 const p2 = waypoints[Math.min(idx + 1, totalSegs)];
                 this.simVoter.position.lerpVectors(p1, p2, t);
                 this.simVoter.lookAt(p2.x, this.simVoter.position.y, p2.z);
+
+                // 模擬選舉人進出圈票處時自動掀開與放下遮簾
+                const shouldLift = (idx === 3 && t > 0.55) || (idx === 4 && t < 0.45);
+                if (shouldLift !== this.curtainsOpen) {
+                    this.toggleBoothCurtains(shouldLift);
+                }
             } else if (this.mode === "counting") {
                 this.callingTimer += delta;
                 if (this.heldBallot) {
                     this.heldBallot.position.y = 1.5 + Math.sin(elapsed * 6) * 0.12;
                 }
-                if (this.callingTimer > 1.8) {
+                if (this.callingTimer > 4.2) {
                     this.callingTimer = 0;
-                    const pick = Math.random() < 0.92 ? Math.floor(Math.random() * 3) : 3;
-                    this.tallyCounts[pick]++;
-                    this.updateTallyBoardCanvas(pick);
-                    if (window.onCountingCallTick) {
-                        window.onCountingCallTick(pick, this.tallyCounts);
-                    }
+                    this.triggerSingleCountingStep();
                 }
             }
         }

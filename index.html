@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>投開票所工作人員手冊｜3D 互動導覽模型</title>
+    <title>投開票所選務實境教學系統｜3D 互動導覽教材</title>
     <!-- Font Awesome 6 Free CDN (全面採用 Font Awesome 圖示) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- 網站樣式表 -->
@@ -17,8 +17,8 @@
                 <i class="fa-solid fa-cubes"></i>
             </div>
             <div class="brand-titles">
-                <h1>投開票所工作人員手冊 <span class="badge-3d"><i class="fa-solid fa-vr-cardboard"></i> 3D 互動導覽</span></h1>
-                <p><i class="fa-solid fa-building-columns"></i> 中央選舉委員會圖解手冊數位化實境教學模型</p>
+                <h1>投開票所選務實境教學系統 <span class="badge-3d"><i class="fa-solid fa-vr-cardboard"></i> 3D 互動教材</span></h1>
+                <p><i class="fa-solid fa-building-columns"></i> 全方位選務空間配置、標準作業程序（SOP）與唱計票語音模擬</p>
             </div>
         </div>
 
@@ -36,8 +36,8 @@
             </button>
         </div>
 
-        <!-- 手冊知識庫與測驗快捷按鈕 -->
-        <nav class="quick-nav" aria-label="手冊知識庫選單">
+        <!-- 教學知識庫與測驗快捷按鈕 -->
+        <nav class="quick-nav" aria-label="選務教材知識庫選單">
             <button class="nav-pill-btn" data-modal="modal-workflow">
                 <i class="fa-solid fa-timeline"></i>
                 <span>作業流程時間軸</span>
@@ -45,10 +45,6 @@
             <button class="nav-pill-btn" data-modal="modal-rules">
                 <i class="fa-solid fa-universal-access"></i>
                 <span>秩序與無障礙規範</span>
-            </button>
-            <button class="nav-pill-btn" data-modal="modal-commissions">
-                <i class="fa-solid fa-address-book"></i>
-                <span>選委會通訊錄</span>
             </button>
             <button class="nav-pill-btn highlight-quiz" data-modal="modal-quiz">
                 <i class="fa-solid fa-graduation-cap"></i>
@@ -73,10 +69,10 @@
                 <span><i class="fa-solid fa-hand-pointer"></i> 點擊人物/標籤查看職務</span>
             </div>
 
-            <!-- 開票動態唱票提示氣泡 -->
+            <!-- 開票動態唱票與複唱語音提示氣泡 -->
             <div id="counting-toast" class="counting-toast hidden">
                 <i class="fa-solid fa-volume-high"></i>
-                <span id="counting-toast-text">唱票模擬進行中...</span>
+                <span id="counting-toast-text">唱票與複唱語音播報準備中...</span>
             </div>
 
             <!-- 底部中央 3D 視角與模擬控制工具列 -->
@@ -93,11 +89,23 @@
                     <i class="fa-solid fa-route"></i>
                     <span>動線標示</span>
                 </button>
-                <button id="btn-simulate-flow" class="tool-btn sim-highlight" title="動態模擬投票動線或開票唱票">
-                    <i class="fa-solid fa-play"></i>
-                    <span id="sim-btn-label">動態模擬</span>
+                <button id="btn-toggle-curtain" class="tool-btn curtain-btn" title="掀開或放下圈票處遮簾以展示遮屏內部設備">
+                    <i id="curtain-btn-icon" class="fa-solid fa-eye"></i>
+                    <span id="curtain-btn-label">掀開遮簾展示</span>
                 </button>
-                <button id="btn-emergency-light" class="tool-btn" title="模擬手冊規定：電燈失明開啟輔助照明設備">
+                <button id="btn-simulate-flow" class="tool-btn sim-highlight" title="動態模擬投票動線或開票唱計票語音播報">
+                    <i class="fa-solid fa-play"></i>
+                    <span id="sim-btn-label">模擬投票動線</span>
+                </button>
+                <button id="btn-voice-demo" class="tool-btn voice-btn" title="立即示範一次唱票與記票複唱語音並劃記正字">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                    <span>唱計票語音示範</span>
+                </button>
+                <button id="btn-voice-toggle" class="tool-btn active" title="開啟或關閉語音播報音效">
+                    <i id="voice-toggle-icon" class="fa-solid fa-volume-high"></i>
+                    <span id="voice-toggle-label">語音開啟</span>
+                </button>
+                <button id="btn-emergency-light" class="tool-btn" title="模擬停電時開啟現場輔助照明設備">
                     <i class="fa-solid fa-bolt-lightning"></i>
                     <span>停電輔助照明</span>
                 </button>
@@ -119,7 +127,7 @@
                 <!-- 導覽站點快速切換列 -->
                 <div class="station-stepper-bar">
                     <div class="stepper-header">
-                        <span><i class="fa-solid fa-location-dot"></i> 導覽站點清單</span>
+                        <span><i class="fa-solid fa-location-dot"></i> 實境教學站點清單</span>
                         <span id="station-progress-text" class="progress-badge">1 / 8</span>
                     </div>
                     <div id="station-pills-list" class="station-pills-list"></div>
@@ -134,13 +142,21 @@
                         <div class="detail-title-group">
                             <div class="detail-meta-row">
                                 <span id="detail-category" class="meta-tag"><i class="fa-solid fa-user-tag"></i> 空間設施</span>
-                                <span id="detail-pageref" class="meta-page"><i class="fa-solid fa-book-open"></i> 手冊第 04 頁</span>
+                                <span id="detail-moduletag" class="meta-page"><i class="fa-solid fa-layer-group"></i> 核心單元 01</span>
                             </div>
-                            <h2 id="detail-title">入口處與禁帶手機標示</h2>
+                            <h2 id="detail-title">入口處、手機管制與友善同行規範</h2>
                         </div>
                     </div>
 
                     <p id="detail-summary" class="detail-summary"></p>
+
+                    <!-- 圈票處遮簾互動控制區 (選取圈票處遮屏時顯示) -->
+                    <div id="curtain-inline-box" class="curtain-inline-box hidden">
+                        <button id="btn-inline-curtain" class="curtain-inline-btn">
+                            <i id="inline-curtain-icon" class="fa-solid fa-eye"></i>
+                            <span id="inline-curtain-text">掀開圈票處遮簾（展示內部圈選工具與視障輔助器）</span>
+                        </button>
+                    </div>
 
                     <div class="duties-section">
                         <h3><i class="fa-solid fa-list-check"></i> 法定佈置規範與工作職務細目</h3>
@@ -188,11 +204,11 @@
         </div>
     </div>
 
-    <!-- Modal 1: 壹、投票及開票作業流程時間軸 -->
+    <!-- Modal 1: 投票及開票標準作業程序（SOP）時間軸 -->
     <div id="modal-workflow" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-workflow-title">
         <div class="modal-panel">
             <div class="modal-header">
-                <h2 id="modal-workflow-title"><i class="fa-solid fa-timeline"></i> 壹、投票及開票作業流程總覽（手冊第 01-03 頁）</h2>
+                <h2 id="modal-workflow-title"><i class="fa-solid fa-timeline"></i> 投票及開票標準作業程序（SOP）總覽</h2>
                 <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-tabs">
@@ -210,37 +226,18 @@
         </div>
     </div>
 
-    <!-- Modal 2: 投開票所秩序維護與協助身心障礙選舉人注意事項 -->
+    <!-- Modal 2: 投開票所秩序維護與無障礙／友善育兒投票規範 -->
     <div id="modal-rules" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-rules-title">
         <div class="modal-panel">
             <div class="modal-header">
-                <h2 id="modal-rules-title"><i class="fa-solid fa-universal-access"></i> 秩序維護六大禁令 & 協助身心障礙選舉人規範</h2>
+                <h2 id="modal-rules-title"><i class="fa-solid fa-universal-access"></i> 投開票所秩序維護重點 & 無障礙／友善育兒規範</h2>
                 <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="rules-content-body" class="modal-body"></div>
         </div>
     </div>
 
-    <!-- Modal 3: 全台各級選舉委員會通訊錄 -->
-    <div id="modal-commissions" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-commissions-title">
-        <div class="modal-panel">
-            <div class="modal-header">
-                <h2 id="modal-commissions-title"><i class="fa-solid fa-address-book"></i> 中央及地方選舉委員會通訊錄（手冊第 21 頁）</h2>
-                <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="search-filter-bar">
-                    <div class="search-input-wrap">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="commission-search" placeholder="輸入縣市名稱、地址或電話搜尋...">
-                    </div>
-                </div>
-                <div id="commissions-grid" class="commissions-grid"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal 4: 投開票所工作人員實務隨堂測驗 -->
+    <!-- Modal 3: 投開票所工作人員實務隨堂測驗 -->
     <div id="modal-quiz" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-quiz-title">
         <div class="modal-panel">
             <div class="modal-header">

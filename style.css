@@ -1,5 +1,5 @@
 /* ==========================================================================
-   投開票所工作人員手冊 3D 互動導覽模型 - 樣式表 (RWD 響應式設計 + 霓虹吉祥物特效)
+   投開票所選務實境教學系統 3D 互動導覽教材 - 樣式表 (RWD 響應式設計 + 霓虹吉祥物特效)
    ========================================================================== */
 
 :root {
@@ -405,6 +405,76 @@ html, body {
 
 .tool-btn.sim-highlight.active i {
     color: #fff;
+}
+
+.tool-btn.voice-btn {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.28), rgba(217, 119, 6, 0.32));
+    border-color: rgba(251, 113, 133, 0.55);
+    color: #ffe4e6;
+}
+
+.tool-btn.voice-btn i {
+    color: #fda4af;
+}
+
+.tool-btn.voice-btn:hover {
+    background: linear-gradient(135deg, #e11d48, #d97706);
+    color: #fff;
+}
+
+.tool-btn.voice-btn:hover i {
+    color: #fff;
+}
+
+.tool-btn.curtain-btn {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(79, 70, 229, 0.32));
+    border-color: rgba(167, 139, 250, 0.55);
+    color: #ede9fe;
+}
+
+.tool-btn.curtain-btn i {
+    color: #c4b5fd;
+}
+
+.tool-btn.curtain-btn:hover,
+.tool-btn.curtain-btn.active {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #fff;
+    border-color: #ddd6fe;
+}
+
+.tool-btn.curtain-btn:hover i,
+.tool-btn.curtain-btn.active i {
+    color: #fff;
+}
+
+.curtain-inline-box {
+    margin: 2px 0;
+}
+
+.curtain-inline-btn {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #a78bfa;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(37, 99, 235, 0.35));
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.22s ease;
+    font-family: inherit;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+.curtain-inline-btn:hover {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.5);
 }
 
 /* ==========================================================================
@@ -1032,76 +1102,6 @@ html, body {
     font-size: 0.8rem;
     color: #cbd5e1;
     line-height: 1.55;
-}
-
-/* 選委會通訊錄搜尋與卡片 */
-.search-filter-bar {
-    margin-bottom: 6px;
-}
-
-.search-input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.search-input-wrap i {
-    position: absolute;
-    left: 14px;
-    color: var(--text-muted);
-}
-
-.search-input-wrap input {
-    width: 100%;
-    padding: 10px 14px 10px 38px;
-    border-radius: 10px;
-    border: 1px solid var(--border-glass);
-    background: rgba(30, 41, 59, 0.9);
-    color: #fff;
-    font-size: 0.88rem;
-    font-family: inherit;
-    outline: none;
-}
-
-.search-input-wrap input:focus {
-    border-color: var(--accent-blue);
-}
-
-.commissions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
-    gap: 10px;
-}
-
-.commission-card {
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid var(--border-glass);
-    border-radius: 11px;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.commission-card h4 {
-    font-size: 0.9rem;
-    color: #38bdf8;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.commission-card p {
-    font-size: 0.78rem;
-    color: #e2e8f0;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.commission-card p i {
-    color: #94a3b8;
-    width: 14px;
 }
 
 /* 隨堂測驗樣式 */
