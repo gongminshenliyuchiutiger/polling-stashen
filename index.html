@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>投開票所工作人員手冊｜3D 互動導覽模型</title>
+    <!-- Font Awesome 6 Free CDN (全面採用 Font Awesome 圖示) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- 網站樣式表 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 頂部導覽列 -->
+    <header class="top-navbar">
+        <div class="brand-area">
+            <div class="brand-logo">
+                <i class="fa-solid fa-cubes"></i>
+            </div>
+            <div class="brand-titles">
+                <h1>投開票所工作人員手冊 <span class="badge-3d"><i class="fa-solid fa-vr-cardboard"></i> 3D 互動導覽</span></h1>
+                <p><i class="fa-solid fa-building-columns"></i> 中央選舉委員會圖解手冊數位化實境教學模型</p>
+            </div>
+        </div>
+
+        <!-- 3D 場景模式切換器 -->
+        <div class="mode-switcher" role="tablist" aria-label="場景模式切換">
+            <button id="btn-mode-polling" class="mode-btn active" data-mode="polling">
+                <i class="fa-solid fa-person-booth"></i>
+                <span>投票所之佈置與職務</span>
+                <span class="step-count">8 站</span>
+            </button>
+            <button id="btn-mode-counting" class="mode-btn" data-mode="counting">
+                <i class="fa-solid fa-bullhorn"></i>
+                <span>開票所之佈置與職務</span>
+                <span class="step-count">6 站</span>
+            </button>
+        </div>
+
+        <!-- 手冊知識庫與測驗快捷按鈕 -->
+        <nav class="quick-nav" aria-label="手冊知識庫選單">
+            <button class="nav-pill-btn" data-modal="modal-workflow">
+                <i class="fa-solid fa-timeline"></i>
+                <span>作業流程時間軸</span>
+            </button>
+            <button class="nav-pill-btn" data-modal="modal-rules">
+                <i class="fa-solid fa-universal-access"></i>
+                <span>秩序與無障礙規範</span>
+            </button>
+            <button class="nav-pill-btn" data-modal="modal-commissions">
+                <i class="fa-solid fa-address-book"></i>
+                <span>選委會通訊錄</span>
+            </button>
+            <button class="nav-pill-btn highlight-quiz" data-modal="modal-quiz">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>實務隨堂測驗</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- 主內容區：左側 3D 互動視窗 + 右側導覽詳情面板 -->
+    <main class="main-workspace">
+        <!-- 3D 畫布與懸浮介面區 -->
+        <section class="viewport-section" aria-label="3D 互動模型視窗">
+            <div id="canvas-container" class="canvas-container"></div>
+            <!-- 3D 空間投影 HTML 互動標籤容器 -->
+            <div id="labels-container" class="labels-container"></div>
+
+            <!-- 左上角操作提示膠囊 -->
+            <div class="controls-hint">
+                <span><i class="fa-solid fa-computer-mouse"></i> 左鍵旋轉</span>
+                <span><i class="fa-solid fa-arrows-up-down-left-right"></i> 右鍵平移</span>
+                <span><i class="fa-solid fa-magnifying-glass-plus"></i> 滾輪縮放</span>
+                <span><i class="fa-solid fa-hand-pointer"></i> 點擊人物/標籤查看職務</span>
+            </div>
+
+            <!-- 開票動態唱票提示氣泡 -->
+            <div id="counting-toast" class="counting-toast hidden">
+                <i class="fa-solid fa-volume-high"></i>
+                <span id="counting-toast-text">唱票模擬進行中...</span>
+            </div>
+
+            <!-- 底部中央 3D 視角與模擬控制工具列 -->
+            <div class="scene-toolbar">
+                <button id="btn-view-overview" class="tool-btn" title="恢復全景透視角">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                    <span>全景視角</span>
+                </button>
+                <button id="btn-view-top" class="tool-btn" title="俯視平面配置圖">
+                    <i class="fa-solid fa-map"></i>
+                    <span>俯視配置圖</span>
+                </button>
+                <button id="btn-toggle-flow" class="tool-btn active" title="顯示或隱藏動線箭頭">
+                    <i class="fa-solid fa-route"></i>
+                    <span>動線標示</span>
+                </button>
+                <button id="btn-simulate-flow" class="tool-btn sim-highlight" title="動態模擬投票動線或開票唱票">
+                    <i class="fa-solid fa-play"></i>
+                    <span id="sim-btn-label">動態模擬</span>
+                </button>
+                <button id="btn-emergency-light" class="tool-btn" title="模擬手冊規定：電燈失明開啟輔助照明設備">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span>停電輔助照明</span>
+                </button>
+                <button id="btn-auto-tour" class="tool-btn" title="自動依序巡覽各站點">
+                    <i class="fa-solid fa-compass"></i>
+                    <span>自動導覽</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 右側導覽詳情側邊欄 (行動裝置可收合) -->
+        <aside id="info-sidebar" class="info-sidebar">
+            <button id="btn-mobile-drawer" class="mobile-drawer-handle" aria-label="展開或收合導覽資訊面板">
+                <i class="fa-solid fa-chevron-up" id="drawer-chevron"></i>
+                <span>站點職務與佈置詳情</span>
+            </button>
+
+            <div class="sidebar-inner">
+                <!-- 導覽站點快速切換列 -->
+                <div class="station-stepper-bar">
+                    <div class="stepper-header">
+                        <span><i class="fa-solid fa-location-dot"></i> 導覽站點清單</span>
+                        <span id="station-progress-text" class="progress-badge">1 / 8</span>
+                    </div>
+                    <div id="station-pills-list" class="station-pills-list"></div>
+                </div>
+
+                <!-- 當前選中站點詳細資訊卡 -->
+                <div class="station-detail-card">
+                    <div class="detail-header">
+                        <div id="detail-icon-box" class="detail-icon-box">
+                            <i id="detail-icon" class="fa-solid fa-door-open"></i>
+                        </div>
+                        <div class="detail-title-group">
+                            <div class="detail-meta-row">
+                                <span id="detail-category" class="meta-tag"><i class="fa-solid fa-user-tag"></i> 空間設施</span>
+                                <span id="detail-pageref" class="meta-page"><i class="fa-solid fa-book-open"></i> 手冊第 04 頁</span>
+                            </div>
+                            <h2 id="detail-title">入口處與禁帶手機標示</h2>
+                        </div>
+                    </div>
+
+                    <p id="detail-summary" class="detail-summary"></p>
+
+                    <div class="duties-section">
+                        <h3><i class="fa-solid fa-list-check"></i> 法定佈置規範與工作職務細目</h3>
+                        <ul id="detail-duties-list" class="duties-list"></ul>
+                    </div>
+                </div>
+
+                <!-- 上一站 / 下一站 導覽控制鈕 -->
+                <div class="sidebar-footer-nav">
+                    <button id="btn-prev-station" class="step-nav-btn">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>上一站點</span>
+                    </button>
+                    <button id="btn-next-station" class="step-nav-btn primary">
+                        <span>下一站點</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 頁尾：FB 粉絲專頁連結與版權聲明 -->
+    <footer class="site-footer">
+        <div class="footer-fb-row">
+            <a href="https://www.facebook.com/happyliyuchilltiger/" target="_blank" rel="noopener noreferrer" class="fb-page-link">
+                <i class="fa-brands fa-facebook"></i>
+                <span>快樂鯉魚秋老虎</span>
+                <i class="fa-solid fa-arrow-up-right-from-square external-icon"></i>
+            </a>
+        </div>
+        <div class="footer-copyright">
+            Copyright &copy; Liyuchiutiger Gongminshen
+        </div>
+    </footer>
+
+    <!-- 左下角可自由拖曳吉祥物 (懸停霓虹彩色發光抖動) -->
+    <div id="draggable-mascot" class="mascot-widget" title="拖曳我到任何地方！懸停觸發霓虹發光抖動">
+        <div class="mascot-drag-badge">
+            <i class="fa-solid fa-arrows-up-down-left-right"></i>
+        </div>
+        <img src="image/LiyuChillGuy.svg" alt="快樂鯉魚秋老虎吉祥物" class="mascot-img" draggable="false">
+        <div class="mascot-tooltip">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> 可自由拖曳移動
+        </div>
+    </div>
+
+    <!-- Modal 1: 壹、投票及開票作業流程時間軸 -->
+    <div id="modal-workflow" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-workflow-title">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2 id="modal-workflow-title"><i class="fa-solid fa-timeline"></i> 壹、投票及開票作業流程總覽（手冊第 01-03 頁）</h2>
+                <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-tabs">
+                <button class="workflow-tab-btn active" data-wf="dayBefore">
+                    <i class="fa-solid fa-calendar-minus"></i> 投票日前 1 日作業 (5步)
+                </button>
+                <button class="workflow-tab-btn" data-wf="votingDay">
+                    <i class="fa-solid fa-check-to-slot"></i> 投票日：投票作業 (12步)
+                </button>
+                <button class="workflow-tab-btn" data-wf="countingDay">
+                    <i class="fa-solid fa-chart-column"></i> 投票日：開票作業 (14步)
+                </button>
+            </div>
+            <div id="workflow-content-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal 2: 投開票所秩序維護與協助身心障礙選舉人注意事項 -->
+    <div id="modal-rules" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-rules-title">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2 id="modal-rules-title"><i class="fa-solid fa-universal-access"></i> 秩序維護六大禁令 & 協助身心障礙選舉人規範</h2>
+                <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="rules-content-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal 3: 全台各級選舉委員會通訊錄 -->
+    <div id="modal-commissions" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-commissions-title">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2 id="modal-commissions-title"><i class="fa-solid fa-address-book"></i> 中央及地方選舉委員會通訊錄（手冊第 21 頁）</h2>
+                <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-filter-bar">
+                    <div class="search-input-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="commission-search" placeholder="輸入縣市名稱、地址或電話搜尋...">
+                    </div>
+                </div>
+                <div id="commissions-grid" class="commissions-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: 投開票所工作人員實務隨堂測驗 -->
+    <div id="modal-quiz" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-quiz-title">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2 id="modal-quiz-title"><i class="fa-solid fa-graduation-cap"></i> 投開票所工作人員實務隨堂測驗</h2>
+                <button class="modal-close-btn" data-close><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="quiz-content-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Three.js 與 OrbitControls / GSAP 動畫函式庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- 應用程式邏輯腳本 -->
+    <script src="data.js"></script>
+    <script src="scene3d.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
